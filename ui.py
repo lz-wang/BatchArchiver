@@ -7,7 +7,7 @@ from PyQt5.Qt import *
 from zipper import Zipper
 
 
-class ZipperUi(QWidget):
+class ZipperUi(QMainWindow):
     def __init__(self):
         super().__init__()
         self.worker = Worker()
@@ -45,6 +45,9 @@ class ZipperUi(QWidget):
         self.ledit_pw = QLineEdit()
         self.ledit_pw.setPlaceholderText('optional')
 
+        # self.status_bar = QStatusBar()
+        self.statusBar().showMessage('Welcome!', 5000)
+
         # set layout
         self.global_layout = QGridLayout()
         self.global_layout.addWidget(label_path, 1, 1, 1, 1)
@@ -59,7 +62,9 @@ class ZipperUi(QWidget):
         self.global_layout.addWidget(self.cb_crate, 3, 5, 1, 1)
         self.global_layout.addWidget(label_cpu_core, 3, 6, 1, 1)
         self.global_layout.addWidget(self.cb_cpu_core, 3, 7, 1, 1)
-        self.setLayout(self.global_layout)
+        self.main_widget = QWidget()
+        self.main_widget.setLayout(self.global_layout)
+        self.setCentralWidget(self.main_widget)
 
     def get_parent_path(self):
         p_path = QFileDialog().getExistingDirectory()
@@ -73,11 +78,16 @@ class ZipperUi(QWidget):
         passwd = None if self.ledit_pw.text() == '' else self.ledit_pw.text()
         zipper = Zipper(p_path, crate, cpu_core, passwd)
         zipper.progress_value.connect(self.update_pregress_bar)
+        zipper.log_output.connect(self.update_log_output)
         zipper.start()
 
     def update_pregress_bar(self, i):
-        print(i)
         self.p_bar.setValue(i)
+
+    def update_log_output(self, logs: tuple):
+        result, msg = logs[0], logs[1].replace('\\', '')
+        if result:
+            self.statusBar().showMessage(f'{msg}')
 
 
 class Worker(QThread):

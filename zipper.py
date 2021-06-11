@@ -3,13 +3,14 @@ import sys
 import os
 import re
 import time
-from multiprocessing import Pool, Lock
-from PyQt5.Qt import QThread, pyqtSignal
+from multiprocessing import Pool
+from PyQt5.Qt import QWidget, pyqtSignal
+from threading import Thread
 
 
-class Zipper(QThread):
+class Zipper(QWidget, Thread):
     progress_value = pyqtSignal(int)
-    log_output = pyqtSignal(str)
+    log_output = pyqtSignal(tuple)
 
     def __init__(self, p_path='', crate=1, cpu_core=1, passwd=None):
         super().__init__()
@@ -74,6 +75,7 @@ class Zipper(QThread):
                             counter += 1
                             progress = 100 * (counter / dir_size)
                             self.progress_value.emit(round(progress))
+                            self.log_output.emit(worker.get())
                             time.sleep(0.05)
                             break
 
@@ -85,13 +87,13 @@ class Zipper(QThread):
                             break
                         else:
                             continue
-
         p.close()
         p.join()
         print('ALL DONE!')
+        self.log_output.emit((True, 'ALL DONE!'))
 
 
-def run_shell(shell):
+def run_shell(shell, **kwargs):
     # stdout=sys.stdout or subprocess.DEVNULL
     cmd = subprocess.Popen(shell, shell=True,
                            stdin=subprocess.PIPE,
@@ -101,7 +103,7 @@ def run_shell(shell):
                            universal_newlines=True)
     while True:
         if subprocess.Popen.poll(cmd) == 0:
-            return True
+            return True, kwargs.get('src')
 
 
 def compress_dir(src_dir, dst_file, level=5, passwd=None):
@@ -114,4 +116,4 @@ def compress_dir(src_dir, dst_file, level=5, passwd=None):
         cmd += "-P\'" + str(passwd) + "\' "
     cmd += str(os.path.join(src_path, dst_file)) + " " + str(src_name)
 
-    return run_shell(cmd)
+    return run_shell(cmd, src=src_dir)
