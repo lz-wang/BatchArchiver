@@ -18,6 +18,7 @@ class Zipper(QWidget, Thread):
         self.crate = crate
         self.cpu_core = cpu_core
         self.passwd = passwd
+        self.p = Pool(self.cpu_core)
 
     @staticmethod
     def scan_dirs(parent_dir):
@@ -27,7 +28,7 @@ class Zipper(QWidget, Thread):
         ld.sort()
         for i, name in enumerate(ld):
             path = os.path.join(parent_dir, name)
-            if os.path.isdir(path) and name[0] != '.':
+            if os.path.isdir(path) and name[0] not in ['.', '_']:
                 sub_dir_name_list.append(name)
                 sub_dir_path_list.append(path)
 
@@ -50,17 +51,25 @@ class Zipper(QWidget, Thread):
         return (re.sub(pattern, '', raw_str)).replace(' ', '\ ')
 
     def run(self):
+        if not os.path.exists(self.p_path):
+            self.log_output.emit((True, 'Dir not exist!'))
+            return
+
         raw_dir_names, raw_dir_list = self.scan_dirs(self.p_path)
+        if not raw_dir_list:
+            self.log_output.emit((True, f'No sub dir found in {self.p_path}'))
+            return
+
         new_dir_list = self.replace_symbols(raw_dir_list)
         dir_size = len(new_dir_list)
-        p = Pool(self.cpu_core)
+        # p = Pool(self.cpu_core)
         workers = []
         counter = 0
         print(self.cpu_core)
         for i in range(dir_size):
             dir_name, dir_path = raw_dir_names[i], new_dir_list[i]
             dst_zip_name = self.remove_prefix(dir_name) + ".zip"
-            process = p.apply_async(compress_dir, args=(dir_path, dst_zip_name, self.crate, self.passwd))
+            process = self.p.apply_async(compress_dir, args=(dir_path, dst_zip_name, self.crate, self.passwd))
             workers.append(process)
 
             while True:
@@ -87,10 +96,15 @@ class Zipper(QWidget, Thread):
                             break
                         else:
                             continue
-        p.close()
-        p.join()
+        self.p.close()
+        self.p.join()
         print('ALL DONE!')
         self.log_output.emit((True, 'ALL DONE!'))
+
+    def kill_all(self):
+        self.p.terminate()
+        self.p.join()
+        self.log_output.emit((True, 'User STOP.'))
 
 
 def run_shell(shell, **kwargs):
