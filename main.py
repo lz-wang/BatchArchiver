@@ -1,5 +1,4 @@
 import sys
-import time
 from multiprocessing import cpu_count
 
 from PyQt5.Qt import *
@@ -54,7 +53,7 @@ class ZipperUi(QMainWindow):
         self.cb_cpu_core = QComboBox()
         for i in range(cpu_count()):
             self.cb_cpu_core.addItem(str(i + 1))
-        self.cb_cpu_core.setCurrentText(str(cpu_count()-1))
+        self.cb_cpu_core.setCurrentText(str(cpu_count() - 1))
         label_password = QLabel('Password:')
         self.ledit_pw = QLineEdit()
         self.ledit_pw.setPlaceholderText('optional')
@@ -114,6 +113,14 @@ class ZipperUi(QMainWindow):
         result, msg = logs[0], logs[1].replace('\\', '')
         if result:
             self.statusBar().showMessage(f'{msg}')
+
+    # def closeEvent(self, event):
+    #     reply = QMessageBox.question(self, u'警告', u'确认退出?',
+    #                                  QMessageBox.Yes, QMessageBox.No)
+    #     if reply == QMessageBox.Yes:
+    #         event.accept()  # 关闭窗口
+    #     else:
+    #         event.ignore()  # 忽视点击X事件
 
 
 if __name__ == '__main__':
