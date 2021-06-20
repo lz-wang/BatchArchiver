@@ -4,7 +4,7 @@ import os
 import re
 import time
 from multiprocessing import Pool
-from PyQt5.Qt import QWidget, pyqtSignal
+from PyQt5.Qt import QWidget, pyqtSignal, QApplication
 from threading import Thread
 
 
@@ -131,3 +131,13 @@ def compress_dir(src_dir, dst_file, level=5, passwd=None):
     cmd += str(os.path.join(src_path, dst_file)) + " " + str(src_name)
 
     return run_shell(cmd, src=src_dir)
+
+
+if __name__ == "__main__":
+    root_path = '/Users/lzwang/Downloads/test/A'
+    app = QApplication(sys.argv)
+    zp = Zipper(p_path=root_path, crate=5, cpu_core=5, passwd='123')
+    zp.start()
+    zp.join()
+    zp.close()
+    app.exec()

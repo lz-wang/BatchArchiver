@@ -107,6 +107,7 @@ class ZipperUi(QMainWindow):
             self.statusBar().showMessage('Zipper not running!')
 
     def update_pregress_bar(self, i):
+        print(f'progress: {i}%')
         self.p_bar.setValue(i)
 
     def update_log_output(self, logs: tuple):
